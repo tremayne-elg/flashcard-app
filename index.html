@@ -33,15 +33,36 @@
   <link rel="icon" href="./media/logo.png" type="image/png" />
 
   <!-- CSS Link -->
-  <link rel="stylesheet" href="style.css" />
-
-  <!-- Preload Fonts (Optional Performance Boost) -->
-  <!-- <link rel="preload" href="fonts/your-font.woff2" as="font" type="font/woff2" crossorigin> -->
+  <link rel="stylesheet" href="styles.css" />
 
   <!-- Scripts -->
   <script defer src="script.js"></script>
 </head>
 <body>
-  <!-- Your app will go here -->
+  <section id="banner">
+    <h1 id="title">FLASHCARDS</h1>
+    <form id="mode-form">
+      <span class="horizontal">
+        <label for="add">ADD</label>
+        <input type="radio" id="add" name="mode">
+      </span>
+      <span class="horizontal">
+        <label for="delete">DELETE</label>
+        <input type="radio" id="delete" name="mode">
+      </span>
+    </form>
+    <div id="banner-body">
+    </div>
+  </section>
+
+  <section id="stack-space">
+    <div class="card-stack">
+      <h1 id="c0" class="stack-name">TEST</h1>
+    </div>
+  </section>
+
+
+
+
 </body>
 </html>
