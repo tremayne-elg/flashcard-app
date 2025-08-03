@@ -1,4 +1,4 @@
-/*----MAIN----*/
+/* ---- ROOT VARIABLES ---- */
 :root {
     --light-background: #4e4e4e;
     --dark-background: #2e2e2e;
@@ -6,8 +6,7 @@
     --delete-red: #d9534f;
 }
 
-
-
+/* ---- GLOBAL RESET ---- */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -21,11 +20,10 @@ body, html {
     width: 100vw;
     height: 100vh;
     display: flex;
-    flex-direction:row;
+    flex-direction: row;
 }
 
-/*----BANNER----*/
-
+/* ---- SIDEBAR / BANNER ---- */
 #banner {
     display: flex;
     flex-direction: column;
@@ -45,9 +43,10 @@ body, html {
     font-weight: bold;
     font-size: 6vh;
     text-decoration: underline;
-    text-underline-offset: 0.5rem;;
+    text-underline-offset: 0.5rem;
 }
 
+/* ---- MODE FORM (Add/Delete) ---- */
 #mode-form {
     display: flex;
     flex-direction: row;
@@ -64,6 +63,7 @@ body, html {
     gap: 0.8rem;
     padding: 0.5rem 1vw;
     border-radius: 0.3rem;
+    border: 2px solid rgba(0,0,0,0.5);
 }
 
 label {
@@ -83,6 +83,7 @@ label {
     transform: scale(1.05);
 }
 
+/* ---- CUSTOM RADIO BUTTONS ---- */
 input[type="radio"] {
     appearance: none;
     width: 15px;
@@ -108,13 +109,15 @@ input[type="radio"][id="delete"]:checked {
     background-color: rgb(196, 32, 32);
 }
 
+/* ---- ADD / DELETE FORM AREA ---- */
 #banner-body {
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     min-width: 90%;
-    width: fit-content;
+    max-width: 25vw;
+    width: 25vw;
     min-height: 70vh;
     height: fit-content;
     background-color: var(--light-background);
@@ -123,13 +126,14 @@ input[type="radio"][id="delete"]:checked {
 }
 
 .horizontal2 {
-    display:flex;
+    display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: space-evenly;
 }
 
-label[for="card-title"] {
+label[for="card-title"],
+label[for="description-text"] {
     font-weight: bold;
     font-size: 3.5vh;
 }
@@ -152,7 +156,8 @@ label[for="card-title"] {
     font-size: 2.5vh;
 }
 
-#card-title::placeholder, #description-text::placeholder {
+#card-title::placeholder,
+#description-text::placeholder {
     color: var(--light-background);
     font-size: 2.5vh;
 }
@@ -167,11 +172,6 @@ label[for="card-title"] {
     align-items: center;
 }
 
-label[for="description-text"] {
-    font-weight: bold;
-    font-size: 3.5vh;
-}
-
 #description-text {
     border-radius: 8px;
     width: 100%;
@@ -182,6 +182,7 @@ label[for="description-text"] {
     font-size: 2.5vh;
 }
 
+/* ---- BUTTONS ---- */
 button {
     width: 10vw;
     height: 5vh;
@@ -219,10 +220,13 @@ button:active {
     font-size: 2.5vh;
     text-align: center;
     margin-top: 2vh;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    width: 100%;
 }
 
-/*----STACK SPACE----*/
-
+/* ---- MAIN STACK SPACE ---- */
 #stack-space {
     width: 100%;
     height: 100%;
@@ -237,11 +241,11 @@ button:active {
     overflow-y: auto;
 }
 
-/*----STACKS----*/
-
+/* ---- CARD FRONT ---- */
 .card-stack {
+    position: relative;
     width: 15vw;
-    aspect-ratio: 5 / 6; /* or whatever ratio suits your card shape */
+    aspect-ratio: 5 / 6;
     background-color: white;
     border: 1px solid black;
     border-radius: 10%;
@@ -250,9 +254,8 @@ button:active {
     display: flex;
     justify-content: center;
     align-items: center;
-    overflow: hidden;
     flex-shrink: 1;
-
+    z-index: 1;
     box-shadow:
         5px 5px 0 white,
         6px 6px 0 black,
@@ -262,19 +265,32 @@ button:active {
         16px 16px 0 black;
 }
 
-.card-stack:hover {
+.card-stack:not(.selected):hover {
     transform: translateY(-6px);
     box-shadow:
         3px 3px 0 white,
         4px 4px 0 black,
-
         6px 6px 0 white,
         7px 7px 0 black,
-
         9px 9px 0 white,
         10px 10px 0 black,
-
         15px 15px 20px rgba(0, 0, 0, 0.8);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.selected {
+    transform: translateY(-6px);
+    box-shadow:
+        3px 3px 0 white,
+        4px 4px 0 black,
+        6px 6px 0 white,
+        7px 7px 0 black,
+        9px 9px 0 white,
+        10px 10px 0 black,
+        15px 15px 20px rgba(0, 0, 0, 0.8);
+    text-decoration: underline;
+    cursor: default;
 }
 
 .card-stack > h1 {
@@ -283,11 +299,168 @@ button:active {
     font-size: 3vh;
     line-height: 3.5vh;
     max-width: 90%;
-    max-height: 24.5vh;
+    max-height: 90%;
     padding: 0.2rem;
     overflow-y: hidden;
     word-wrap: break-word;
     white-space: normal;
     text-align: center;
 }
+
+/* ---- ACTION BUTTON CONTAINER ---- */
+#decide-container {
+    position: absolute;
+    top: -1.5vw;
+    left: 0;
+    min-width: 7.5vw;
+    width: fit-content;
+    height: 5vh;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    z-index: 5;
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+}
+
+#decide-container > button {
+    border: none;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 20%;
+    height: 80%;
+    width: 25%;
+    padding: 2px 6px;
+    font-size: 2vh;
+    border: 2px solid rgba(0,0,0,0.5);
+}
+
+#decide-container > button:hover {
+    filter: brightness(85%);
+}
+
+#edit-button {
+    background-color: var(--add-green);
+    color: white;
+}
+
+#cancel-button {
+    background-color: var(--delete-red);
+    color: white;
+}
+
+#play-button {
+    background-color: rgb(79, 79, 194);
+    color: white;
+}
+
+/* ---- NEXT BUTTON ---- */
+.next-button {
+    width: 10%;
+    height: 10%;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 20%;
+    padding: 2px 8px;
+    font-size: 2vh;
+    border: 2px solid rgba(0,0,0,0.5);
+    position: absolute;
+    z-index: 5;
+    bottom: 5%;
+    right: 5%;
+    background-color: var(--light-background);
+}
+
+.next-button:hover {
+    filter: brightness(70%);
+}
+
+/* ---- CARD BACK ---- */
+.card-stack-back {
+    position: relative;
+    width: 15vw;
+    aspect-ratio: 5 / 6;
+    background-color: white;
+    border: 1px solid black;
+    border-radius: 10%;
+    color: black;
+    transition: transform 0.2s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 1;
+    z-index: 1;
+    box-shadow:
+        5px -5px 0 white,
+        6px -6px 0 black,
+        10px -10px 0 white,
+        11px -11px 0 black,
+        15px -15px 0 white,
+        16px -16px 0 black;
+}
+
+.card-stack-back:not(.selected):hover {
+    transform: translateY(6px);
+    box-shadow:
+        3px -3px 0 white,
+        4px -4px 0 black,
+        6px -6px 0 white,
+        7px -7px 0 black,
+        9px -9px 0 white,
+        10px -10px 0 black,
+        15px -15px 20px rgba(0, 0, 0, 0.8);
+    cursor: pointer;
+}
+
+.card-stack-back > p {
+    user-select: none;
+    color: black;
+    line-height: 3.5vh;
+    max-width: 90%;
+    max-height: 90%;
+    padding: 0.2rem;
+    overflow-y: hidden;
+    word-wrap: break-word;
+    white-space: normal;
+    text-align: center;
+}
+
+/* ---- CARD BACK TEXT AREA ---- */
+.description-body {
+    width: 80%;
+    height: 80%;
+    background-color: var(--dark-background);
+    border-radius: 10%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    text-align: left;
+    padding: 20px;
+    overflow: hidden;
+    font-size: 1.5vh;
+}
+
+.card-stack-back {
+  display: none;
+}
+
+.parent-stack.show-back .card-stack {
+  display: none;
+}
+
+.parent-stack.show-back .card-stack-back {
+  display: flex;
+}
+
 
