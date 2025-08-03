@@ -15,7 +15,7 @@ mode_form.addEventListener('change', () => {
     if (existing) existing.remove()
 
     const nextBtn = selectedStack.querySelector('.next-button')
-    if (nextBtn) nextBtn.remove()
+    if (nextBtn) nextBtn.style.display = 'none'
 
     const container = document.createElement('div')
     container.id = 'decide-container'
@@ -23,6 +23,7 @@ mode_form.addEventListener('change', () => {
     // If in delete mode, show only cancel
     if (selected?.id === 'delete') {
       container.innerHTML = `<button type="button" id="cancel-button">&#x2716;</button>`
+      
     } 
     // In add/play mode, show full controls
     else {
@@ -52,11 +53,11 @@ mode_form.addEventListener('change', () => {
       <form id="add-form">
         <span class="horizontal2">
           <label for="card-title">TITLE</label>
-          <input type="text" id="card-title" name="card-title" placeholder="Name...">
+          <input type="text" id="card-title" name="card-title" placeholder="Name">
         </span>
         <span class="vertical">
           <label for="description-text">DESCRIPTION</label>
-          <textarea id="description-text" name="description" placeholder="Description..."></textarea>
+          <textarea id="description-text" name="description" placeholder="Description"></textarea>
         </span>
         <button type="button" id="add-button">ADD</button>
       </form>
@@ -127,7 +128,7 @@ function addStack(add_btn, card_ttle, description_txt, selected) {
     back.className = 'card-stack-back'
     back.innerHTML = `
       <div class="description-body">
-        <p class="back-description">${descValue}</p>
+        <p class="back-description" style="white-space: pre-wrap;">${descValue}</p>
       </div>
     `
 
@@ -172,15 +173,18 @@ stack_space.addEventListener('click', (e) => {
   // Add correct buttons based on mode
   if (mode === 'delete') {
     container.innerHTML = `<button type="button" id="cancel-button">&#x2716;</button>`
+    
   } else {
     container.innerHTML = `
       <button type="button" id="edit-button">&#9998;</button>
       <button type="button" id="play-button">&#x25B6;</button>
       <button type="button" id="cancel-button">&#x2716;</button>
     `
-    const nextBtn = stack.querySelector('.next-button')
-    if (nextBtn) nextBtn.style.display = 'flex'
+    
   }
+
+  const nextBtn = stack.querySelector('.next-button')
+  if (nextBtn) nextBtn.style.display = 'flex'
 
   stack.appendChild(container)
 
