@@ -443,7 +443,7 @@ button:active {
     background-color: var(--dark-background);
     border-radius: 10%;
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: flex-start;
     text-align: left;
     padding: 20px;
@@ -452,15 +452,56 @@ button:active {
 }
 
 .card-stack-back {
-  display: none;
+    display: none;
 }
 
 .parent-stack.show-back .card-stack {
-  display: none;
+    display: none;
 }
 
 .parent-stack.show-back .card-stack-back {
-  display: flex;
+    display: flex;
 }
 
+/* EDIT MODE: show front + back side by side */
+.parent-stack.edit-mode {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 2vw;
+}
 
+.parent-stack.edit-mode .card-stack,
+.parent-stack.edit-mode .card-stack-back {
+    display: flex !important;
+    position: static;
+    transform: none;
+    box-shadow: none;
+    border: 2px solid black;
+}
+
+.parent-stack.edit-mode .card-stack-back {
+    animation: slideOut 0.5s ease-out forwards;
+}
+
+@keyframes slideOut {
+    from {
+        opacity: 0;
+        transform: translateX(-1rem);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.parent-stack.edit-mode .card-stack {
+    position: relative;
+}
+
+.parent-stack.edit-mode #decide-container {
+    position: absolute;
+    top: -1.5vw;
+    left: 0;
+    z-index: 5;
+}
