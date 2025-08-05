@@ -1,16 +1,17 @@
-// ---- DOM ELEMENTS & STATE ----
+// DOM Elements & State
 const mode_form = document.getElementById('mode-form');
 const banner_body = document.getElementById('banner-body');
 const stack_space = document.getElementById('stack-space');
 let cardCount = 0;
 let editting = 0;
 
-// ---- MODE CHANGE HANDLER ----
+// Mode Change Handler
 mode_form.addEventListener('change', () => {
   const selected = mode_form.querySelector('input[name="mode"]:checked');
   editting = 0;
   exitAllEditModes();
 
+  // Show action buttons for selected stack
   const selectedStack = document.querySelector('.card-stack.selected');
   if (selectedStack) {
     const existing = selectedStack.querySelector('#decide-container');
@@ -36,7 +37,7 @@ mode_form.addEventListener('change', () => {
 
     attachEditHandler(selectedStack, container);
 
-    // Cancel button
+    // Cancel button handler
     container.querySelector('#cancel-button').onclick = () => {
       const parent = selectedStack.closest('.parent-stack');
       const nextBtn = selectedStack.querySelector('.next-button');
@@ -47,7 +48,7 @@ mode_form.addEventListener('change', () => {
     };
   }
 
-  // ---- RENDER MODE FORMS ----
+  // Render mode forms
   if (selected?.id === 'add') {
     banner_body.innerHTML = `
       <form id="add-form">
@@ -66,6 +67,7 @@ mode_form.addEventListener('change', () => {
     const card_title = document.getElementById('card-title');
     const description_text = document.getElementById('description-text');
     addStack(add_button, card_title, description_text, selected);
+
   } else if (selected?.id === 'delete') {
     banner_body.innerHTML = `
       <span id="delete-container">
@@ -74,6 +76,7 @@ mode_form.addEventListener('change', () => {
       </span>
     `;
     deleteFuntionality();
+
   } else {
     banner_body.innerHTML = `
       <span id="delete-container">
@@ -83,7 +86,7 @@ mode_form.addEventListener('change', () => {
   }
 });
 
-// ---- ADD STACK ----
+// Add Stack Handler
 function addStack(add_btn, card_ttle, description_txt, selected) {
   add_btn.addEventListener('click', () => {
     const cardValue = card_ttle.value;
@@ -105,6 +108,7 @@ function addStack(add_btn, card_ttle, description_txt, selected) {
 
     cardCount++;
 
+    // Create card front and back
     const parent = document.createElement('div');
     parent.className = 'parent-stack';
 
@@ -128,22 +132,26 @@ function addStack(add_btn, card_ttle, description_txt, selected) {
     parent.appendChild(back);
     stack_space.appendChild(parent);
 
+    // Reset form
     card_ttle.value = '';
     description_txt.value = '';
     selected.checked = false;
 
+    // Trigger mode change to refresh UI
     const event = new Event('change', { bubbles: true });
     mode_form.dispatchEvent(event);
   });
 }
 
-// ---- CARD SELECTION HANDLER ----
+// Card Selection Handler
 stack_space.addEventListener('click', (e) => {
+  if (editting) return;
   if (e.target.closest('#decide-container')) return;
 
   const stack = e.target.closest('.card-stack');
   if (!stack) return;
 
+  // Deselect all stacks
   document.querySelectorAll('.card-stack').forEach(el => {
     el.classList.remove('selected');
     const existing = el.querySelector('#decide-container');
@@ -156,6 +164,7 @@ stack_space.addEventListener('click', (e) => {
 
   stack.classList.add('selected');
 
+  // Show action buttons for selected stack
   const selectedMode = document.querySelector('input[name="mode"]:checked');
   const mode = selectedMode ? selectedMode.id : null;
 
@@ -180,7 +189,7 @@ stack_space.addEventListener('click', (e) => {
   stack.appendChild(container);
   attachEditHandler(stack, container);
 
-  // Cancel button
+  // Cancel button handler
   container.querySelector('#cancel-button').onclick = () => {
     const parent = stack.closest('.parent-stack');
     const nextBtn = stack.querySelector('.next-button');
@@ -192,7 +201,7 @@ stack_space.addEventListener('click', (e) => {
   };
 });
 
-// ---- DELETE STACK ----
+// Delete Stack Handler
 function deleteFuntionality() {
   const selected = mode_form.querySelector('input[name="mode"]:checked');
   const delete_button = document.getElementById('delete-button');
@@ -210,7 +219,7 @@ function deleteFuntionality() {
   });
 }
 
-// ---- CARD FLIP HANDLER ----
+// Card Flip Handler
 document.addEventListener('click', (e) => {
   if (e.target.classList.contains('next-button')) {
     const parent = e.target.closest('.parent-stack');
@@ -223,7 +232,7 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// ---- EXIT EDIT MODE ----
+// Exit Edit Mode Utility
 function exitAllEditModes() {
   document.querySelectorAll('.parent-stack.edit-mode').forEach(parent => {
     parent.classList.remove('edit-mode');
@@ -231,6 +240,7 @@ function exitAllEditModes() {
   editting = 0;
 }
 
+// Edit Handler for Card
 function attachEditHandler(stack, container) {
   const editButton = container.querySelector('#edit-button');
   if (!editButton) return;
@@ -242,21 +252,106 @@ function attachEditHandler(stack, container) {
     const playBtn = container.querySelector('#play-button');
 
     parent.classList.remove('show-back');
-
     const isEditing = parent.classList.toggle('edit-mode');
+
     if (isEditing) {
       editting = 1;
-      editButton.innerHTML = "&#10003;";
+      editButton.innerHTML = "&#10003;"; // ✔
       if (nextBtn) nextBtn.style.display = "none";
+
+      // Disable radio inputs and style
+      document.querySelectorAll('#mode-form .horizontal').forEach(span => {
+        const input = span.querySelector('input');
+        input.disabled = true;
+        span.classList.add('disabled');
+      });
+
+      // Disable all other buttons except edit
+      document.querySelectorAll('button:not(#edit-button)').forEach(btn => btn.disabled = true);
+
+      // Replace title with input
+      const title = stack.querySelector('.stack-name');
+      const input = document.createElement('input');
+      input.className = 'stack-name-input';
+      input.value = title.textContent;
+      title.replaceWith(input);
+
+      // Replace description with textarea
+      const desc = parent.querySelector('.back-description');
+      const textarea = document.createElement('textarea');
+      textarea.className = 'back-description-input';
+      textarea.value = desc.textContent;
+      desc.replaceWith(textarea);
+
+      // Validate edit fields
+      function validateEditFields() {
+        let valid = true;
+        if (!input.value.trim()) {
+          input.style.border = '2px dashed var(--delete-red)';
+          valid = false;
+        } else {
+          input.style.border = '';
+        }
+        if (!textarea.value.trim()) {
+          textarea.style.border = '2px dashed var(--delete-red)';
+          valid = false;
+        } else {
+          textarea.style.border = '';
+        }
+        if (!valid) {
+          editButton.disabled = true;
+          editButton.style.filter = 'brightness(70%)';
+          editButton.style.cursor = 'not-allowed';
+        } else {
+          editButton.disabled = false;
+          editButton.style.filter = '';
+          editButton.style.cursor = 'pointer';
+        }
+      }
+      input.addEventListener('input', validateEditFields);
+      textarea.addEventListener('input', validateEditFields);
+      validateEditFields();
+
     } else {
       editting = 0;
-      editButton.innerHTML = "&#9998;";
+      editButton.innerHTML = "&#9998;"; // ✎
+
+      // Re-enable radio inputs and remove disabled style
+      document.querySelectorAll('#mode-form .horizontal').forEach(span => {
+        const input = span.querySelector('input');
+        input.disabled = false;
+        span.classList.remove('disabled');
+      });
+
+      // Re-enable all buttons
+      document.querySelectorAll('button').forEach(btn => btn.disabled = false);
+
+      // Replace input with title
+      const input = stack.querySelector('.stack-name-input');
+      const textarea = parent.querySelector('.back-description-input');
+
       if (nextBtn) nextBtn.style.display = "flex";
+
+      const newTitle = document.createElement('h1');
+      newTitle.className = 'stack-name';
+      newTitle.textContent = input.value.toUpperCase();
+      input.replaceWith(newTitle);
+
+      const newDesc = document.createElement('p');
+      newDesc.className = 'back-description';
+      newDesc.style.whiteSpace = 'pre-wrap';
+      newDesc.textContent = textarea.value;
+      textarea.replaceWith(newDesc);
+
+      stack.dataset.description = newDesc.textContent;
     }
 
+    // Toggle visibility of cancel/play buttons
     if (cancelBtn && playBtn) {
       cancelBtn.style.display = isEditing ? 'none' : 'flex';
       playBtn.style.display = isEditing ? 'none' : 'flex';
     }
   });
 }
+
+
