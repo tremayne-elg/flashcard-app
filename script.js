@@ -2,7 +2,7 @@
 // 1. GLOBAL VARIABLES & STATE
 // ==========================
 
-const mode_form = document.getElementById('mode-form');
+let mode_form = document.getElementById('mode-form');
 const banner_body = document.getElementById('banner-body');
 const stack_space = document.getElementById('stack-space');
 
@@ -89,7 +89,7 @@ function addStack(add_btn, card_ttle, description_txt, selected) {
     selected.checked = false;
 
     mode_form.dispatchEvent(new Event('change', { bubbles: true }));
-    saveStacksToLocalStorage(); // 🔹 Save after adding
+    saveStacksToLocalStorage();
   });
 }
 
@@ -132,7 +132,7 @@ function deleteFunctionality() {
     });
     selected.checked = false;
     mode_form.dispatchEvent(new Event('change', { bubbles: true }));
-    saveStacksToLocalStorage(); // 🔹 Save after deleting
+    saveStacksToLocalStorage();
   });
 }
 
@@ -183,6 +183,7 @@ function attachEditHandler(stack, container) {
       const input = document.createElement('input');
       input.className = 'stack-name-input';
       input.value = title.textContent;
+      input.setAttribute('data-old-title', title.textContent); 
       title.replaceWith(input);
 
       const desc = parent.querySelector('.back-description');
@@ -235,9 +236,12 @@ function attachEditHandler(stack, container) {
 
       if (nextBtn) nextBtn.style.display = "flex";
 
+      const oldTitle = input.getAttribute('data-old-title') || '';
+      const newTitleText = input.value.toUpperCase();
+
       const newTitle = document.createElement('h1');
       newTitle.className = 'stack-name';
-      newTitle.textContent = input.value.toUpperCase();
+      newTitle.textContent = newTitleText;
       input.replaceWith(newTitle);
 
       const newDesc = document.createElement('p');
@@ -248,7 +252,28 @@ function attachEditHandler(stack, container) {
 
       stack.dataset.description = newDesc.textContent;
 
-      saveStacksToLocalStorage(); // 🔹 Save after editing
+      if (oldTitle && oldTitle !== newTitleText) {
+        const raw = localStorage.getItem('flashcards');
+        if (raw) {
+          let data = JSON.parse(raw);
+          const oldIndex = data.findIndex(s => s.title === oldTitle);
+          const newIndex = data.findIndex(s => s.title === newTitleText);
+
+          if (oldIndex !== -1) {
+            if (newIndex !== -1 && newIndex !== oldIndex) {
+              const oldCards = Array.isArray(data[oldIndex].cards) ? data[oldIndex].cards : [];
+              const newCards = Array.isArray(data[newIndex].cards) ? data[newIndex].cards : [];
+              data[newIndex].cards = newCards.concat(oldCards);
+              data.splice(oldIndex, 1);
+            } else {
+              data[oldIndex].title = newTitleText;
+            }
+            localStorage.setItem('flashcards', JSON.stringify(data));
+          }
+        }
+      }
+
+      saveStacksToLocalStorage();
     }
 
     if (cancelBtn && playBtn) {
@@ -332,6 +357,11 @@ function attachDecideContainer(stack, mode) {
 
   attachEditHandler(stack, container);
 
+  const playBtn = container.querySelector('#play-button');
+  if (playBtn) {
+    playBtn.onclick = () => initPlayMode(stack);
+  }
+
   container.querySelector('#cancel-button').onclick = () => {
     const parent = stack.closest('.parent-stack');
     if (nextBtn) nextBtn.style.display = 'none';
@@ -342,22 +372,30 @@ function attachDecideContainer(stack, mode) {
 }
 
 // ==========================
-// 7. LOCALSTORAGE UTILITY
+// 7. LOCALSTORAGE UTILITY 
 // ==========================
 
 function saveStacksToLocalStorage() {
-  if (editting) return; // Don’t save during edit mode
+  if (editting) return;
 
-  const data = [];
+  let data = [];
+  const raw = localStorage.getItem('flashcards');
+  if (raw) data = JSON.parse(raw);
+
+  const newData = [];
   document.querySelectorAll('.parent-stack').forEach(stack => {
     const titleElement = stack.querySelector('.stack-name') || stack.querySelector('.stack-name-input');
     const descElement = stack.querySelector('.back-description') || stack.querySelector('.back-description-input');
     const title = titleElement?.textContent || '';
     const description = descElement?.textContent || '';
-    data.push({ title, description });
+
+    const existing = data.find(s => s.title === title);
+    const cards = existing && Array.isArray(existing.cards) ? existing.cards : [];
+
+    newData.push({ title, description, cards });
   });
 
-  localStorage.setItem('flashcards', JSON.stringify(data));
+  localStorage.setItem('flashcards', JSON.stringify(newData));
 }
 
 function loadStacksFromLocalStorage() {
@@ -398,3 +436,237 @@ function loadStacksFromLocalStorage() {
 // ==========================
 
 loadStacksFromLocalStorage();
+
+// ==========================
+// 9. PLAY MODE INITIALIZATION
+// ==========================
+
+let playMode = false;
+let currentStackId = null;
+let playCards = [];
+let currentCardIndex = 0;
+let showQuestion = true;
+
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
+
+function initPlayMode(stack) {
+  playMode = true;
+  currentCardIndex = 0;
+  showQuestion = true;
+
+  document.querySelectorAll('#mode-form input[type="radio"]').forEach(radio => radio.checked = false);
+
+  document.querySelectorAll('.parent-stack').forEach(el => el.style.display = 'none');
+
+  banner_body.innerHTML = '';
+
+  const stackTitle = stack.querySelector('.stack-name').textContent.trim();
+  currentStackId = stackTitle;
+
+  const raw = localStorage.getItem('flashcards');
+  let data = raw ? JSON.parse(raw) : [];
+
+  let stackData = data.find(s => s.title === currentStackId);
+  if (!stackData) {
+    stackData = { title: currentStackId, description: "", cards: [] };
+    data.push(stackData);
+    localStorage.setItem('flashcards', JSON.stringify(data));
+  }
+
+  playCards = stackData.cards || [];
+
+  renderPlayModeLayout(stackTitle);
+
+  if (playCards.length === 0) {
+    renderCreateCard();
+  } else {
+    renderStudyMode();
+  }
+}
+
+function renderPlayModeLayout(title) {
+  stack_space.style.display = 'none';
+  const playContainer = document.getElementById('play-mode-container');
+  playContainer.style.display = 'flex';
+  playContainer.innerHTML = `
+    <div id="play-mode-header">
+      <h2 id="play-stack-title">${title}</h2>
+      <button id="exit-play-mode">&#9208;</button>
+    </div>
+    <div id="play-card-area"></div>
+  `;
+  document.getElementById('exit-play-mode').onclick = exitPlayMode;
+}
+
+function renderCreateCard() {
+  const cardArea = document.getElementById('play-card-area');
+  if (!cardArea) return;
+
+  cardArea.innerHTML = `
+    <form id="play-add-form">
+      <div class="form-row">
+        <div class="form-column">
+          <label for="play-card-title">CARD FRONT</label>
+          <textarea id="play-card-title" placeholder="Question"></textarea>
+        </div>
+        <div class="form-column">
+          <label for="play-card-description">CARD BACK</label>
+          <textarea id="play-card-description" placeholder="Answer"></textarea>
+        </div>
+      </div>
+      <button type="submit">+</button>
+    </form>
+  `;
+
+  const form = document.getElementById('play-add-form');
+  const titleInput = document.getElementById('play-card-title');
+  const descInput = document.getElementById('play-card-description');
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const title = titleInput.value.trim();
+    const description = descInput.value.trim();
+
+    if (!title || !description) {
+      if (!title) titleInput.style.border = '2px solid var(--delete-red)';
+      if (!description) descInput.style.border = '2px solid var(--delete-red)';
+      return;
+    }
+
+    titleInput.style.border = '';
+    descInput.style.border = '';
+
+    const raw = localStorage.getItem('flashcards');
+    if (!raw) return;
+    const data = JSON.parse(raw);
+
+    const stackIndex = data.findIndex(stack => stack.title === currentStackId);
+    if (stackIndex === -1) return;
+
+    if (!data[stackIndex].cards) data[stackIndex].cards = [];
+    data[stackIndex].cards.push({ title, description });
+
+    localStorage.setItem('flashcards', JSON.stringify(data));
+
+    titleInput.value = '';
+    descInput.value = '';
+
+    playCards = data[stackIndex].cards;
+    currentCardIndex = playCards.length - 1;
+    renderStudyMode();
+  });
+}
+
+function renderStudyMode() {
+  if (playCards.length === 0) return;
+
+  const cardArea = document.getElementById('play-card-area');
+  cardArea.innerHTML = `
+    <div id="study-mode">
+      <div id="study-card">
+        <button id="flip-button">A</button>
+        <div id="study-card-content"></div>
+      </div>
+      <div id="study-controls">
+        <button id="prev-card">&#8592</button>
+        <button id="delete-card">&#9003;</button>
+        <button id="shuffle-cards">&#8644;</button>
+        <button id="add-card">&#43;</button>
+        <button id="next-card">&#8594;</button>
+      </div>
+      <div id="card-counter" style="text-align:center; margin-top: 1vh; font-weight:bold;"></div>
+    </div>
+  `;
+
+  updateStudyCard();
+
+  document.getElementById('flip-button').onclick = () => {
+    showQuestion = !showQuestion;
+    updateStudyCard();
+  };
+
+  document.getElementById('prev-card').onclick = () => {
+    if (currentCardIndex > 0) {
+      currentCardIndex--;
+      showQuestion = true;
+      updateStudyCard();
+    }
+  };
+
+  document.getElementById('next-card').onclick = () => {
+    if (currentCardIndex < playCards.length - 1) {
+      currentCardIndex++;
+      showQuestion = true;
+      updateStudyCard();
+    }
+  };
+
+  document.getElementById('shuffle-cards').onclick = () => {
+    shuffleArray(playCards);
+    currentCardIndex = 0;
+    showQuestion = true;
+    updateStudyCard();
+  };
+
+  document.getElementById('delete-card').onclick = () => {
+    const raw = localStorage.getItem('flashcards');
+    if (!raw) return;
+    const data = JSON.parse(raw);
+
+    const stackIndex = data.findIndex(stack => stack.title === currentStackId);
+    if (stackIndex === -1) return;
+
+    data[stackIndex].cards.splice(currentCardIndex, 1);
+    localStorage.setItem('flashcards', JSON.stringify(data));
+
+    playCards.splice(currentCardIndex, 1);
+    if (currentCardIndex > 0) currentCardIndex--;
+    showQuestion = true;
+
+    if (playCards.length === 0) {
+      renderCreateCard();
+    } else {
+      updateStudyCard();
+    }
+  };
+
+  document.getElementById('add-card').onclick = renderCreateCard;
+}
+
+function updateStudyCard() {
+  const card = playCards[currentCardIndex];
+  const contentDiv = document.getElementById('study-card-content');
+  if (!card || !contentDiv) return;
+
+  contentDiv.textContent = showQuestion ? card.title : card.description;
+
+  const flipBtn = document.getElementById('flip-button');
+  flipBtn.textContent = showQuestion ? 'Q' : 'A';
+
+  const counterDiv = document.getElementById('card-counter');
+  if (counterDiv) {
+    counterDiv.textContent = `${playCards.length === 0 ? 0 : currentCardIndex + 1} / ${playCards.length}`;
+  }
+}
+
+function exitPlayMode() {
+  playMode = false;
+  currentStackId = null;
+  playCards = [];
+  currentCardIndex = 0;
+  showQuestion = true;
+
+  document.getElementById('play-mode-container').style.display = 'none';
+  document.getElementById('stack-space').style.display = 'flex';
+
+  renderDefaultPrompt();
+
+  document.querySelectorAll('.parent-stack').forEach(el => el.style.display = 'flex');
+}
+
