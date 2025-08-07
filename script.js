@@ -459,7 +459,11 @@ function initPlayMode(stack) {
   currentCardIndex = 0;
   showQuestion = true;
 
-  document.querySelectorAll('#mode-form input[type="radio"]').forEach(radio => radio.checked = false);
+  document.querySelectorAll('#mode-form input[type="radio"]').forEach(radio => {
+    radio.checked = false;
+    radio.disabled = true; // Disable radios in play mode
+    radio.parentElement.classList.add('disabled');
+  });
 
   document.querySelectorAll('.parent-stack').forEach(el => el.style.display = 'none');
 
@@ -663,7 +667,12 @@ function exitPlayMode() {
   showQuestion = true;
 
   document.getElementById('play-mode-container').style.display = 'none';
-  document.getElementById('stack-space').style.display = 'flex';
+  document.getElementById('stack-space').style.display = '';
+
+  document.querySelectorAll('#mode-form input[type="radio"]').forEach(radio => {
+    radio.disabled = false;
+    radio.parentElement.classList.remove('disabled');
+  });
 
   renderDefaultPrompt();
 
